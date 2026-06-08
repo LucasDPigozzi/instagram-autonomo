@@ -88,7 +88,7 @@ Ou me diga o que fazer agora:</div>
 <script>
 const chatEl=document.getElementById('chat'),input=document.getElementById('input'),btn=document.getElementById('btn');
 function addMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.innerHTML=t.replace(/\n/g,'<br>');chatEl.appendChild(el);chatEl.scrollTop=chatEl.scrollHeight;return el}
-function send(text){input.value=text;document.getElementById('form').requestSubmit()}
+window.send=function(text){input.value=text;document.getElementById('form').requestSubmit()}
 document.getElementById('form').addEventListener('submit',async e=>{
   e.preventDefault();const text=input.value.trim();if(!text)return;
   addMsg('user',text);input.value='';btn.disabled=true;
