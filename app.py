@@ -293,7 +293,7 @@ def chat_endpoint():
         return jsonify({"error": "Mensagem vazia."}), 400
 
     history = session.get("history", [])
-    history.append({"role": "user", "parts": [{"text": message}]})
+    history.append({"role": "user", "content": message})
 
     try:
         reply, history = chat(history)

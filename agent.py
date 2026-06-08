@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 import requests
@@ -5,7 +6,8 @@ import requests
 from tools import TOOLS, execute_tool
 import database as db
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL = "llama-3.3-70b-versatile"
 
 
 def _system_prompt():
@@ -65,57 +67,60 @@ Distribua pelos melhores horários. Gere imagens que representem profissionalism
 
 
 def chat(messages: list) -> tuple[str, list]:
-    key = os.environ.get("GEMINI_API_KEY")
+    key = os.environ.get("GROQ_API_KEY")
     if not key:
-        raise RuntimeError("GEMINI_API_KEY não configurada.")
+        raise RuntimeError("GROQ_API_KEY não configurada.")
 
     system = _system_prompt()
 
     while True:
         r = requests.post(
-            f"{GEMINI_URL}?key={key}",
+            GROQ_URL,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             json={
-                "system_instruction": {"parts": [{"text": system}]},
-                "contents": messages,
-                "tools": [{"function_declarations": TOOLS}],
-                "generation_config": {"max_output_tokens": 4096},
+                "model": MODEL,
+                "messages": [{"role": "system", "content": system}] + messages,
+                "tools": TOOLS,
+                "tool_choice": "auto",
+                "max_tokens": 4096,
             },
             timeout=120,
         )
         r.raise_for_status()
         data = r.json()
 
-        if "error" in data:
-            raise RuntimeError(data["error"]["message"])
+        msg = data["choices"][0]["message"]
+        messages = messages + [msg]
 
-        content = data["candidates"][0]["content"]
-        messages = messages + [content]
+        if not msg.get("tool_calls"):
+            return msg.get("content", ""), messages
 
-        fn_calls = [p for p in content["parts"] if "functionCall" in p]
-        if not fn_calls:
-            text = "".join(p.get("text", "") for p in content["parts"] if "text" in p)
-            return text, messages
+        tool_results = []
+        for tc in msg["tool_calls"]:
+            fn = tc["function"]
+            args = json.loads(fn["arguments"])
+            result = execute_tool(fn["name"], args)
+            tool_results.append({
+                "role": "tool",
+                "tool_call_id": tc["id"],
+                "content": json.dumps(result, ensure_ascii=False),
+            })
 
-        fn_results = []
-        for part in fn_calls:
-            fc = part["functionCall"]
-            result = execute_tool(fc["name"], fc.get("args", {}))
-            fn_results.append({"functionResponse": {"name": fc["name"], "response": result}})
-
-        messages = messages + [{"role": "user", "parts": fn_results}]
+        messages = messages + tool_results
 
 
 def simple_ask(prompt: str) -> str:
-    """Faz uma pergunta simples ao Gemini sem histórico (uso interno)."""
-    key = os.environ.get("GEMINI_API_KEY")
+    """Pergunta simples ao Groq sem histórico (uso interno)."""
+    key = os.environ.get("GROQ_API_KEY")
     r = requests.post(
-        f"{GEMINI_URL}?key={key}",
+        GROQ_URL,
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
         json={
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generation_config": {"max_output_tokens": 2048},
+            "model": MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 2048,
         },
         timeout=60,
     )
     r.raise_for_status()
-    data = r.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
+    return r.json()["choices"][0]["message"]["content"]
