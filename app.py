@@ -78,18 +78,18 @@ Ou me diga o que fazer agora:</div>
     <button type="submit" id="btn">↑</button>
   </form>
   <div class="actions">
-    <span class="chip" onclick="send('Planeje o conteúdo desta semana')">📅 Planejar semana</span>
-    <span class="chip" onclick="send('Como estão as métricas desta semana?')">📊 Ver métricas</span>
-    <span class="chip" onclick="send('Mostre os posts agendados')">🗓 Posts agendados</span>
-    <span class="chip" onclick="send('Crie uma legenda para um post de case de sucesso')">✍️ Criar legenda</span>
+    <span class="chip" data-msg="Planeje o conteúdo desta semana">📅 Planejar semana</span>
+    <span class="chip" data-msg="Como estão as métricas desta semana?">📊 Ver métricas</span>
+    <span class="chip" data-msg="Mostre os posts agendados">🗓 Posts agendados</span>
+    <span class="chip" data-msg="Crie uma legenda para um post de case de sucesso">✍️ Criar legenda</span>
   </div>
   <div id="hint">Enter para enviar · Shift+Enter para nova linha</div>
 </footer>
 <script>
-const chatEl=document.getElementById('chat'),input=document.getElementById('input'),btn=document.getElementById('btn');
+const chatEl=document.getElementById('chat'),input=document.getElementById('input'),btn=document.getElementById('btn'),form=document.getElementById('form');
 function addMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.innerHTML=t.replace(/\n/g,'<br>');chatEl.appendChild(el);chatEl.scrollTop=chatEl.scrollHeight;return el}
-window.send=function(text){input.value=text;document.getElementById('form').requestSubmit()}
-document.getElementById('form').addEventListener('submit',async e=>{
+document.querySelectorAll('.chip').forEach(function(chip){chip.addEventListener('click',function(){input.value=chip.dataset.msg;form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))})});
+form.addEventListener('submit',async function(e){
   e.preventDefault();const text=input.value.trim();if(!text)return;
   addMsg('user',text);input.value='';btn.disabled=true;
   const th=addMsg('thinking','✦ Pensando...');
@@ -97,11 +97,11 @@ document.getElementById('form').addEventListener('submit',async e=>{
     const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
     const d=await r.json();th.remove();
     addMsg('agent',d.reply||d.error||'Erro.');
-  }catch{th.remove();addMsg('agent','Erro de conexão.');}
+  }catch(err){th.remove();addMsg('agent','Erro de conexão: '+err.message);}
   finally{btn.disabled=false;input.focus()}
 });
-input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('form').requestSubmit()}});
-input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,120)+'px'});
+input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))}});
+input.addEventListener('input',function(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,120)+'px'});
 </script>
 </body>
 </html>"""
