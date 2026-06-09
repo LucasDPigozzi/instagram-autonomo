@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import datetime
 import requests
 
@@ -74,19 +75,24 @@ def chat(messages: list) -> tuple[str, list]:
     system = _system_prompt()
 
     while True:
-        r = requests.post(
-            GROQ_URL,
-            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={
-                "model": MODEL,
-                "messages": [{"role": "system", "content": system}] + messages,
-                "tools": TOOLS,
-                "tool_choice": "auto",
-                "max_tokens": 4096,
-            },
-            timeout=120,
-        )
-        r.raise_for_status()
+        for attempt in range(3):
+            r = requests.post(
+                GROQ_URL,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                json={
+                    "model": MODEL,
+                    "messages": [{"role": "system", "content": system}] + messages,
+                    "tools": TOOLS,
+                    "tool_choice": "auto",
+                    "max_tokens": 4096,
+                },
+                timeout=120,
+            )
+            if r.status_code == 429 and attempt < 2:
+                time.sleep(30)
+                continue
+            r.raise_for_status()
+            break
         data = r.json()
 
         msg = data["choices"][0]["message"]
@@ -112,15 +118,20 @@ def chat(messages: list) -> tuple[str, list]:
 def simple_ask(prompt: str) -> str:
     """Pergunta simples ao Groq sem histórico (uso interno)."""
     key = os.environ.get("GROQ_API_KEY")
-    r = requests.post(
-        GROQ_URL,
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-        json={
-            "model": MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 2048,
-        },
-        timeout=60,
-    )
-    r.raise_for_status()
+    for attempt in range(3):
+        r = requests.post(
+            GROQ_URL,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 2048,
+            },
+            timeout=60,
+        )
+        if r.status_code == 429 and attempt < 2:
+            time.sleep(30)
+            continue
+        r.raise_for_status()
+        break
     return r.json()["choices"][0]["message"]["content"]
