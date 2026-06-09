@@ -280,6 +280,17 @@ def health():
     })
 
 
+@app.route("/privacy")
+def privacy():
+    return """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Política de Privacidade — Agencia.IA</title></head><body style="font-family:sans-serif;max-width:700px;margin:40px auto;padding:0 20px;line-height:1.6">
+<h1>Política de Privacidade</h1><p>Última atualização: junho de 2025</p>
+<p>A <strong>Agencia.IA</strong> utiliza a API oficial do Instagram (Meta) exclusivamente para gerenciar e publicar conteúdo na própria conta da agência.</p>
+<h2>Dados coletados</h2><p>Coletamos apenas dados de desempenho das publicações (alcance, impressões, engajamento) para fins de análise interna.</p>
+<h2>Uso dos dados</h2><p>Os dados são utilizados exclusivamente para otimizar a estratégia de conteúdo da agência. Não compartilhamos dados com terceiros.</p>
+<h2>Contato</h2><p>Para dúvidas: lucaspigozzi.d@gmail.com</p>
+</body></html>"""
+
+
 @app.route("/")
 def index():
     return render_template_string(CHAT_HTML)
