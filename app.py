@@ -270,6 +270,16 @@ function save(){
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@app.route("/health")
+def health():
+    import os
+    return jsonify({
+        "groq_key": "OK" if os.environ.get("GROQ_API_KEY") else "MISSING",
+        "instagram_token": "OK" if os.environ.get("INSTAGRAM_ACCESS_TOKEN") else "MISSING",
+        "flask_secret": "OK" if os.environ.get("FLASK_SECRET_KEY") else "MISSING",
+    })
+
+
 @app.route("/")
 def index():
     return render_template_string(CHAT_HTML)
