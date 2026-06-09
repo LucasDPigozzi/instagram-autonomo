@@ -16,7 +16,7 @@ def generate_image_url(prompt: str, width: int = 1080, height: int = 1080) -> st
     encoded = urllib.parse.quote(prompt, safe="")
     url = (
         f"https://image.pollinations.ai/prompt/{encoded}"
-        f"?width={width}&height={height}&nologo=true&model=flux&enhance=true"
+        f"?width={width}&height={height}&nologo=true&model=turbo&seed=-1"
     )
     # Faz o download antecipado para garantir que a imagem está cacheada
     # antes do Instagram tentar acessar a URL
