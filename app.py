@@ -87,7 +87,7 @@ Ou me diga o que fazer agora:</div>
 </footer>
 <script>
 const chatEl=document.getElementById('chat'),input=document.getElementById('input'),btn=document.getElementById('btn'),form=document.getElementById('form');
-function addMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.innerHTML=t.replace(/\n/g,'<br>');chatEl.appendChild(el);chatEl.scrollTop=chatEl.scrollHeight;return el}
+function addMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.innerHTML=t.replace(/\\n/g,'<br>');chatEl.appendChild(el);chatEl.scrollTop=chatEl.scrollHeight;return el}
 document.querySelectorAll('.chip').forEach(function(chip){chip.addEventListener('click',function(){input.value=chip.dataset.msg;form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))})});
 form.addEventListener('submit',async function(e){
   e.preventDefault();const text=input.value.trim();if(!text)return;
